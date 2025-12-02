@@ -1,0 +1,65 @@
+/* Colores base para mejor mantenimiento */
+:root {
+    --color-dark-bg: #1A1727; 
+    --color-box-bg: #272439; 
+    --color-input-bg: #35304C; 
+    --color-text-placeholder: #000000; 
+    --color-link: #8B85A8; 
+    --color-button-border: #4D4968;
+}
+
+/* 1. Fondo principal y patrón (el body tiene la clase bg-dark de Bootstrap) */
+.custom-background {
+    background-color: var(--color-dark-bg) !important;
+    /* Intento de replicar el patrón sutil, puedes quitarlo si no lo necesitas */
+    /*background-image: radial-gradient(circle at 50% 50%, rgba(47, 43, 61, 0.4) 1px, transparent 1px);
+    background-size: 20px 20px;*/
+}
+
+/* 2. Estilo de la tarjeta de login */
+.custom-card {
+    background-color: #1A1727;
+    border: none;
+    border-radius: 8px;
+    padding: 2.5rem !important; /* Más padding para que se vea más grande */
+}
+
+/* 3. Estilo de los campos de entrada */
+.custom-input {
+    background-color: var(--color-input-bg);
+    border: none;
+    color: rgb(0, 0, 0) !important; /* Texto del input en blanco */
+}
+
+/* Placeholder (texto "Usuario" o "Contraseña") */
+.custom-input::placeholder {
+    color: var(--color-text-placeholder) !important;
+    opacity: 1; 
+}
+
+/* Quitar el borde de enfoque azul por defecto de Bootstrap */
+.custom-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(139, 133, 168, 0.25); /* Un brillo más sutil */
+    background-color: var(--color-input-bg);
+    color: rgb(139, 0, 0);
+}
+
+/* 4. Estilo del botón (usa btn-outline-light de Bootstrap) */
+.custom-btn-outline {
+    /* Sobreescribe el color de borde de Bootstrap para hacerlo más oscuro */
+    --bs-btn-border-color: var(--color-button-border);
+    /* Color de texto en hover */
+    --bs-btn-hover-color: rgb(172, 0, 0); 
+    /* Fondo en hover */
+    --bs-btn-hover-bg: rgba(255, 255, 255, 0.05);
+}
+
+/* 5. Enlace "Olvidaste Contraseña" */
+.custom-link {
+    color: var(--color-link) !important;
+    font-size: 0.95rem;
+}
+
+.custom-link:hover {
+    color: rgb(158, 0, 0) !important;
+}
