@@ -22,9 +22,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     // Datos de especialidad
     $especialidad = $_POST["especialidad"] ?? "";
-    $horario_inicio = $_POST["horario_inicio"] ?? '';
-    $horario_fin = $_POST["horario_fin"] ?? '';
-    $horario = trim($horario_inicio . ' - ' . $horario_fin);
+    $horario = $_POST["horario"] ?? "";
+
 
     // Actualizar médico
     $stmt = $conn->prepare("UPDATE medicos 
@@ -47,14 +46,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         // Actualizar especialidad existente
         $id_espec = $resultado["id_especialidad"];
         $stmt = $conn->prepare("UPDATE especialidades 
-                                SET especialidad=?, horario_atencion=? 
+                                SET especialidad=?, horario=? 
                                 WHERE id_especialidad=?");
         $stmt->bind_param("ssi", $especialidad, $horario, $id_espec);
         $stmt->execute();
         $stmt->close();
     } else {
         // Crear especialidad nueva
-        $stmt = $conn->prepare("INSERT INTO especialidades (especialidad, horario_atencion) 
+        $stmt = $conn->prepare("INSERT INTO especialidades (especialidad, horario) 
                                 VALUES (?, ?)");
         $stmt->bind_param("ss", $especialidad, $horario);
         $stmt->execute();
@@ -81,7 +80,7 @@ if ($id <= 0) { header("Location: administracion.php"); exit; }
 
 $stmt = $conn->prepare(
 "SELECT m.id_medicos, m.nombre, m.apellido, m.dni, m.telefono, m.correo_electronico,
-        e.especialidad, e.horario_atencion
+        e.especialidad, e.horario
  FROM medicos m
  LEFT JOIN medicos_especialidades me ON m.id_medicos = me.id_medico
  LEFT JOIN especialidades e ON me.id_especialidad = e.id_especialidad
@@ -148,19 +147,11 @@ if (!$data) { header("Location: administracion.php"); exit; }
                         <input type="text" name="especialidad" class="form-control" required value="<?= htmlspecialchars($data['especialidad'] ?? '') ?>">
                     </div>
 
-                    <?php
-                        $parts = preg_split('/\s*-\s*/', ($data['horario_atencion'] ?? ''), 2);
-                        $h_inicio = $parts[0] ?? '';
-                        $h_fin = $parts[1] ?? '';
-                    ?>
+                     <div class="col-md-6">
+                        <label class="form-label">Horario de atención</label>
+                        <input type="text" name="horario" class="form-control" placeholder="Ej: 08:00 a 15:00" required value="<?= htmlspecialchars($data['horario'] ?? '') ?>">
 
-                    <div class="col-md-6">
-                        <label class="form-label">Horario de inicio</label>
-                        <input type="time" name="horario_inicio" class="form-control" value="<?= htmlspecialchars($h_inicio) ?>">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Horario fin</label>
-                        <input type="time" name="horario_fin" class="form-control" value="<?= htmlspecialchars($h_fin) ?>">
+
                     </div>
 
                     <div class="col-12 text-end mt-3">
