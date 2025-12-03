@@ -13,9 +13,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $correo = htmlspecialchars($_POST['correo_electronico']);
 
     $especialidad = htmlspecialchars($_POST['especialidad']);
-    $horario_inicio = htmlspecialchars($_POST['horario_inicio'] ?? '');
-    $horario_fin = htmlspecialchars($_POST['horario_fin'] ?? '');
-    $horario_atencion = trim($horario_inicio . ' - ' . $horario_fin);
+    $horario = htmlspecialchars($_POST['horario']);
+
 
     // Comprobar que el correo no exista (restricción unique en BD)
     $chk = $conn->prepare("SELECT COUNT(*) AS cnt FROM medicos WHERE correo_electronico = ?");
@@ -24,40 +23,54 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $res_chk = $chk->get_result()->fetch_assoc();
     $chk->close();
 
+    // Comprobar DNI
+    $chk2 = $conn->prepare("SELECT COUNT(*) AS cnt FROM medicos WHERE dni = ?");
+    $chk2->bind_param("s", $dni);
+    $chk2->execute();
+    $res_chk2 = $chk2->get_result()->fetch_assoc();
+    $chk2->close();
+
     if (!empty($res_chk['cnt'])) {
-        $message = '<div class="alert alert-danger">Error: el correo electrónico ya está registrado.</div>';
+    $message = '<div class="alert alert-danger">Error: el correo electrónico ya está registrado.</div>';
+} 
+elseif (!empty($res_chk2['cnt'])) {
+    $message = '<div class="alert alert-danger">Error: el DNI ya está registrado.</div>';
+} 
+else {
+
+    // INSERT MEDICO
+    $sql1 = "INSERT INTO medicos (nombre, apellido, dni, telefono, correo_electronico)
+             VALUES (?, ?, ?, ?, ?)";
+    $stmt1 = $conn->prepare($sql1);
+    $stmt1->bind_param("sssss", $nombre, $apellido, $dni, $telefono, $correo);
+
+    if ($stmt1->execute()) {
+        $id_medico = $conn->insert_id;
+        $stmt1->close();
+
+        // INSERT ESPECIALIDAD
+        $sql2 = "INSERT INTO especialidades (especialidad, horario)
+                 VALUES (?, ?)";
+        $stmt2 = $conn->prepare($sql2);
+        $stmt2->bind_param("ss", $especialidad, $horario);
+        $stmt2->execute();
+        $id_especialidad = $conn->insert_id;
+        $stmt2->close();
+
+        // TABLA INTERMEDIA
+        $sql3 = "INSERT INTO medicos_especialidades (id_medico, id_especialidad)
+                 VALUES (?, ?)";
+        $stmt3 = $conn->prepare($sql3);
+        $stmt3->bind_param("ii", $id_medico, $id_especialidad);
+        $stmt3->execute();
+        $stmt3->close();
+
+        $message = '<div class="alert alert-success">Médico registrado correctamente.</div>';
     } else {
-        // INSERT MÉDICO
-        $sql1 = "INSERT INTO medicos (nombre, apellido, dni, telefono, correo_electronico)
-                 VALUES (?, ?, ?, ?, ?)";
-        $stmt1 = $conn->prepare($sql1);
-        $stmt1->bind_param("sssss", $nombre, $apellido, $dni, $telefono, $correo);
-        if ($stmt1->execute()) {
-            $id_medico = $conn->insert_id;
-            $stmt1->close();
-
-            // INSERT ESPECIALIDAD
-            $sql2 = "INSERT INTO especialidades (especialidad, horario_atencion)
-                     VALUES (?, ?)";
-            $stmt2 = $conn->prepare($sql2);
-            $stmt2->bind_param("ss", $especialidad, $horario_atencion);
-            $stmt2->execute();
-            $id_especialidad = $conn->insert_id;
-            $stmt2->close();
-
-            // TABLA INTERMEDIA
-            $sql3 = "INSERT INTO medicos_especialidades (id_medico, id_especialidad)
-                     VALUES (?, ?)";
-            $stmt3 = $conn->prepare($sql3);
-            $stmt3->bind_param("ii", $id_medico, $id_especialidad);
-            $stmt3->execute();
-            $stmt3->close();
-
-            $message = '<div class="alert alert-success">Médico registrado correctamente.</div>';
-        } else {
-            $message = '<div class="alert alert-danger">Error al insertar el médico: ' . htmlspecialchars($stmt1->error ?? 'unknown') . '</div>';
-        }
+        $message = '<div class="alert alert-danger">Error al insertar el médico: ' . htmlspecialchars($stmt1->error ?? 'unknown') . '</div>';
     }
+}
+
 
 
 }
@@ -114,12 +127,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label">Horario inicio</label>
-                    <input type="time" name="horario_inicio" class="form-control" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Horario fin</label>
-                    <input type="time" name="horario_fin" class="form-control" required>
+                    <label class="form-label">Horario de atención</label>
+                    <input type="text" name="horario" class="form-control" placeholder="Ej: 08:00 a 15:00" required>
+
                 </div>
 
                 <div class="col-12 text-end">
