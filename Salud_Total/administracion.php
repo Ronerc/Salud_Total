@@ -16,25 +16,7 @@ function insertarPreparar($conn, $sql, $types, ...$params) {
   return $id;
 }
 
-// Devuelve horario formateado "inicio — fin" cuando sea posible.
-function horarioInicioFin($raw) {
-  $raw = trim((string)$raw);
-  if ($raw === '') return '';
-  // Buscar horas en formato HH:MM
-  preg_match_all('/\b(\d{1,2}:\d{2})\b/', $raw, $matches);
-  if (!empty($matches[1]) && count($matches[1]) >= 2) {
-    return htmlspecialchars($matches[1][0]) . ' — ' . htmlspecialchars($matches[1][1]);
-  }
-  if (!empty($matches[1]) && count($matches[1]) === 1) {
-    return htmlspecialchars($matches[1][0]);
-  }
-  // Fallback: split por guion
-  $parts = preg_split('/\s*-\s*/', $raw, 2);
-  $inicio = trim($parts[0] ?? '');
-  $fin = trim($parts[1] ?? '');
-  if ($fin !== '') return htmlspecialchars($inicio) . ' — ' . htmlspecialchars($fin);
-  return htmlspecialchars($inicio);
-}
+
 
 
 // PROCESAR FORMULARIO
@@ -50,9 +32,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Datos especialidad
     $especialidad = $_POST["especialidad"];
-    $inicio = $_POST["horario_inicio"] ?? "";
-    $fin = $_POST["horario_fin"] ?? "";
-    $horario = "$inicio - $fin";
+    $horario = trim($_POST["horario"]);
+      if ($horario === "") {
+          $horario = "Sin horario"; 
+      }
 
     // 1) Insert médico
     $id_medico = insertarPreparar(
@@ -66,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // 2) Insert especialidad
     $id_especialidad = insertarPreparar(
         $conn,
-        "INSERT INTO especialidades (especialidad, horario_atencion)
+        "INSERT INTO especialidades (especialidad, horario)
          VALUES (?, ?)",
         "ss",
         $especialidad, $horario
@@ -180,17 +163,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <tbody>
 
                         <?php
-                        $sql = "
-                          SELECT 
-                            m.id_medicos,
-                            m.nombre AS nombre_medico,
-                            m.apellido AS apellido_medico,
-                            e.especialidad,
-                            e.horario_atencion
-                          FROM medicos m
-                          INNER JOIN medicos_especialidades me ON m.id_medicos = me.id_medico
-                          INNER JOIN especialidades e ON me.id_especialidad = e.id_especialidad
-                        ";
+                        $sql = "SELECT 
+                                m.id_medicos,
+                                m.nombre AS nombre_medico,
+                                m.apellido AS apellido_medico,
+                                e.especialidad,
+                                e.horario
+                            FROM medicos m
+                            LEFT JOIN medicos_especialidades me ON m.id_medicos = me.id_medico
+                            LEFT JOIN especialidades e ON me.id_especialidad = e.id_especialidad";
+
 
                         $lista = $conn->query($sql);
 
@@ -207,7 +189,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <tr>
                                         <td><?= $row['nombre_medico'] . ' ' . $row['apellido_medico'] ?></td>
                                         <td><?= $row['especialidad'] ?></td>
-                                        <td><?= horarioInicioFin($row['horario_atencion'] ?? '') ?></td>
+                                        <td><?= ($row['horario']) ?></td>
+
 
                                         <td>
                                             <a href="<?php echo 'editar_medico.php?id=' . urlencode($row['id_medicos']); ?>" 
